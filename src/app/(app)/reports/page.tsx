@@ -17,6 +17,8 @@ import { mockContributors, mockProperties, mockServices } from "@/lib/data";
 
 
 export default function ReportsPage() {
+  const colonias = [...new Set(mockProperties.map(p => p.colonia))];
+
   return (
     <div className="flex flex-col gap-6">
       <Card>
@@ -33,10 +35,9 @@ export default function ReportsPage() {
                         <SelectValue placeholder="Todas" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="centro">Centro</SelectItem>
-                        <SelectItem value="san-diego">San Diego</SelectItem>
-                        <SelectItem value="tepeyac">Tepeyac</SelectItem>
-                        <SelectItem value="contlalco">Contlalco</SelectItem>
+                        {colonias.map(colonia => (
+                            <SelectItem key={colonia} value={colonia.toLowerCase().replace(/\s/g, '-')}>{colonia}</SelectItem>
+                        ))}
                     </SelectContent>
                 </Select>
             </div>
