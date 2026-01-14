@@ -10,6 +10,7 @@ import {
   Map,
   Settings,
   User,
+  Users,
 } from "lucide-react";
 
 import {
@@ -42,6 +43,11 @@ const navItems = [
     href: "/dashboard",
     icon: LayoutDashboard,
     label: "Dashboard",
+  },
+  {
+    href: "/contributors",
+    icon: Users,
+    label: "Contribuyentes",
   },
   {
     href: "/technician",
