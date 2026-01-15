@@ -1,0 +1,15 @@
+# render.yaml
+services:
+  - type: web
+    name: tlapa-multiservicios
+    env: node
+    plan: free # Puedes cambiar a 'starter' o superior si lo necesitas
+    buildCommand: "npm install && npm run build"
+    startCommand: "npm start"
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+        # Por seguridad, el valor se debe configurar en el dashboard de Render
+        # y no directamente aquí.
+        value: "TU_API_KEY_AQUI"
