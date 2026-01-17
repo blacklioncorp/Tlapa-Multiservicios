@@ -34,13 +34,11 @@ export type Service = {
   activo: boolean;
 };
 
-// Este tipo de Pago ahora refleja la estructura de la base de datos
-// y el archivo Excel que proporcionaste.
 export type Payment = {
-  id: string; // Corresponde a UUIUD
+  id: string; // Corresponde a UUID
   folio: number;
   caja: number;
-  fecha: string;
+  fechaPago: string;
   programa: string;
   clave?: string;
   estadoRecibo: string;

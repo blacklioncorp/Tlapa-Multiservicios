@@ -30,14 +30,14 @@ export default async function DashboardPage() {
 
   const monthlyRevenue = payments.reduce((acc, payment) => {
     if (isThisMonth(parseISO(payment.fechaPago))) {
-      return acc + payment.monto;
+      return acc + payment.total;
     }
     return acc;
   }, 0);
 
   const yearlyRevenue = payments.reduce((acc, payment) => {
     if (isThisYear(parseISO(payment.fechaPago))) {
-        return acc + payment.monto;
+        return acc + payment.total;
     }
     return acc;
   }, 0);
@@ -52,7 +52,7 @@ export default async function DashboardPage() {
     const paymentMonth = parseISO(p.fechaPago).toLocaleString('default', { month: 'short' });
     const target = revenueByMonth.find(m => m.month === paymentMonth);
     if(target) {
-        target.total += p.monto;
+        target.total += p.total;
     }
   });
 

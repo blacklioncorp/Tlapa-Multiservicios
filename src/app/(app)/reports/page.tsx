@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge";
-import { mockContributors, mockProperties, mockServices } from "@/lib/data";
+import { mockContributors, mockProperties, mockPayments } from "@/lib/data";
 
 
 export default function ReportsPage() {
@@ -86,37 +86,34 @@ export default function ReportsPage() {
       </Card>
       <Card>
         <CardHeader>
-            <CardTitle>Vista Previa de Reporte</CardTitle>
+            <CardTitle>Vista Previa de Reporte de Pagos</CardTitle>
         </CardHeader>
         <CardContent>
         <Table>
             <TableHeader>
                 <TableRow>
-                <TableHead>Contribuyente</TableHead>
-                <TableHead>Inmueble</TableHead>
-                <TableHead>Servicio</TableHead>
-                <TableHead>Estado</TableHead>
+                    <TableHead>Folio</TableHead>
+                    <TableHead>Contribuyente</TableHead>
+                    <TableHead>Concepto</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead>Fecha Pago</TableHead>
+                    <TableHead>Estado Recibo</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
-                <TableRow>
-                    <TableCell className="font-medium">{mockContributors[0].nombre_completo}</TableCell>
-                    <TableCell>{mockProperties[0].direccionTexto}</TableCell>
-                    <TableCell>{mockServices[0].tipo}</TableCell>
-                    <TableCell><Badge className="bg-green-500">Al corriente</Badge></TableCell>
-                </TableRow>
-                <TableRow>
-                    <TableCell className="font-medium">{mockContributors[1].nombre_completo}</TableCell>
-                    <TableCell>{mockProperties[1].direccionTexto}</TableCell>
-                    <TableCell>{mockServices[2].tipo}</TableCell>
-                    <TableCell><Badge variant="destructive">En Mora</Badge></TableCell>
-                </TableRow>
-                <TableRow>
-                    <TableCell className="font-medium">{mockContributors[2].nombre_completo}</TableCell>
-                    <TableCell>{mockProperties[2].direccionTexto}</TableCell>
-                    <TableCell>{mockServices[4].tipo}</TableCell>
-                    <TableCell><Badge className="bg-orange-500">Atrasado</Badge></TableCell>
-                </TableRow>
+                {mockPayments.slice(0, 3).map((payment) => {
+                    const contributor = mockContributors.find(c => c.id === payment.contribuyenteId);
+                    return (
+                    <TableRow key={payment.id}>
+                        <TableCell className="font-medium">{payment.folio}</TableCell>
+                        <TableCell>{contributor?.nombre_completo || 'N/A'}</TableCell>
+                        <TableCell>{payment.concepto}</TableCell>
+                        <TableCell className="text-right">${payment.total.toFixed(2)}</TableCell>
+                        <TableCell>{payment.fechaPago}</TableCell>
+                        <TableCell><Badge className="bg-green-500 text-white">{payment.estadoRecibo}</Badge></TableCell>
+                    </TableRow>
+                    );
+                })}
             </TableBody>
             </Table>
         </CardContent>
