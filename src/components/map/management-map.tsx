@@ -93,7 +93,7 @@ export function ManagementMap({ properties, onMapClick, newPropertyLocation }: M
                                     anchor={marker}
                                     onCloseClick={() => setSelectedProperty(null)}
                                 >
-                                    <div className="p-2 min-w-48">
+                                    <div className="p-2 w-44 max-h-40 overflow-y-auto">
                                         <h3 className="font-bold text-base flex items-center gap-2"><Home className="w-4 h-4" /> Inmueble</h3>
                                         <p className="text-sm text-muted-foreground">{selectedProperty.direccionTexto}</p>
                                         <p className="text-sm mt-1">Colonia: {selectedProperty.colonia}</p>
