@@ -1,0 +1,82 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+}
+
+model AppUser {
+  uid       String    @id @default(cuid())
+  email     String    @unique
+  rol       String // 'admin' | 'tecnico' | 'cajero'
+  nombre    String
+  avatarUrl String?
+}
+
+model Contributor {
+  id              String      @id @default(cuid())
+  nombre_completo String
+  rfc             String      @unique
+  telefono        String
+  email           String      @unique
+  fechaRegistro   DateTime    @default(now())
+  
+  properties      Property[]
+  payments        Payment[]
+}
+
+model Property {
+  id               String       @id @default(cuid())
+  direccionTexto   String
+  lat              Float
+  lng              Float
+  colonia          String
+  municipio        String
+  estado           String
+  referencias      String
+  status           String // 'verified' | 'pending'
+  
+  contribuyente    Contributor  @relation(fields: [contribuyenteId], references: [id])
+  contribuyenteId  String
+
+  services         Service[]
+}
+
+model Service {
+  id              String    @id @default(cuid())
+  tipo            String // 'agua' | 'predial' | 'catastro'
+  numeroServicio  String    @unique
+  fechaAlta       DateTime  @default(now())
+  activo          Boolean   @default(true)
+
+  property        Property  @relation(fields: [inmuebleId], references: [id])
+  inmuebleId      String
+
+  payments        Payment[]
+}
+
+// Modelo de Pagos/Recibos basado en el archivo Excel proporcionado
+model Payment {
+  id            String    @id @default(cuid()) // Corresponde a UUIUD
+  folio         Int
+  caja          Int
+  fecha         DateTime
+  programa      String
+  clave         String?   // CLAVE de la hoja de cálculo
+  estadoRecibo  String    // "VIGENTE"
+  formaPago     String    // "EFECTIVO"
+  concepto      String
+  total         Float
+
+  // Relaciones con otros modelos
+  service       Service?  @relation(fields: [servicioId], references: [id])
+  servicioId    String?
+
+  contributor   Contributor? @relation(fields: [contribuyenteId], references: [id])
+  contribuyenteId String?
+}

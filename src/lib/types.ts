@@ -34,15 +34,28 @@ export type Service = {
   activo: boolean;
 };
 
+// Este tipo de Pago ahora refleja la estructura de la base de datos
+// y el archivo Excel que proporcionaste.
 export type Payment = {
-  id: string;
+  id: string; // Corresponde a UUIUD
+  folio: number;
+  caja: number;
+  fecha: string;
+  programa: string;
+  clave?: string;
+  estadoRecibo: string;
+  formaPago: string;
+  concepto: string;
+  total: number;
+  
   servicioId: string;
-  monto: number;
-  fechaPago: string;
-  periodoCubierto: string; // "YYYY-MM"
-  metodo: 'cash' | 'card' | 'transfer';
-  comprobanteUrl?: string;
+  contribuyenteId?: string;
+
+  // El periodo cubierto ahora está dentro del 'concepto',
+  // pero lo mantenemos para compatibilidad temporal con la lógica existente.
+  periodoCubierto: string; 
 };
+
 
 export type AppUser = {
   uid: string;
