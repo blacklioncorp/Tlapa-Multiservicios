@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from 'react';
-import { APIProvider, Map, AdvancedMarker, InfoWindow, useAdvancedMarkerRef } from '@vis.gl/react-google-maps';
-import type { Property, PaymentStatus } from '@/lib/types';
+import { APIProvider, Map, AdvancedMarker, InfoWindow, useAdvancedMarkerRef, Pin } from '@vis.gl/react-google-maps';
+import type { Property, PaymentStatus, GeoPoint } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Home, MapPin } from 'lucide-react';
@@ -19,8 +19,13 @@ const MarkerPin = ({ status }: { status: PaymentStatus }) => (
     </div>
 );
 
+type ManagementMapProps = {
+    properties: (Property & { paymentStatus: PaymentStatus })[];
+    onMapClick?: (e: google.maps.MapMouseEvent) => void;
+    newPropertyLocation?: GeoPoint | null;
+}
 
-export function ManagementMap({ properties }: { properties: (Property & { paymentStatus: PaymentStatus })[] }) {
+export function ManagementMap({ properties, onMapClick, newPropertyLocation }: ManagementMapProps) {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
     const [markerRef, marker] = useAdvancedMarkerRef();
@@ -55,6 +60,12 @@ export function ManagementMap({ properties }: { properties: (Property & { paymen
                             mapId="tlapa-map"
                             gestureHandling={'greedy'}
                             disableDefaultUI={true}
+                            onClick={onMapClick}
+                            // Change cursor to crosshair when onMapClick is provided
+                            options={{
+                                mapId: "tlapa-map",
+                                cursor: onMapClick ? 'crosshair' : 'default'
+                            }}
                         >
                             {properties.map((prop) => (
                                 <AdvancedMarker
@@ -66,6 +77,17 @@ export function ManagementMap({ properties }: { properties: (Property & { paymen
                                     <MarkerPin status={prop.paymentStatus} />
                                 </AdvancedMarker>
                             ))}
+
+                            {newPropertyLocation && (
+                                <AdvancedMarker position={newPropertyLocation}>
+                                    <Pin 
+                                        background={'hsl(var(--primary))'} 
+                                        borderColor={'hsl(var(--primary))'}
+                                        glyphColor={'hsl(var(--primary-foreground))'}
+                                    />
+                                </AdvancedMarker>
+                            )}
+
                             {selectedProperty && (
                                 <InfoWindow
                                     anchor={marker}
