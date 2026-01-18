@@ -72,12 +72,12 @@ export default function ReportsPage() {
                 <Input id="date-range" type="date" />
             </div>
           </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline">
+          <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" className="w-full sm:w-auto">
                 <FileDown className="mr-2 h-4 w-4" />
                 Exportar a Excel
             </Button>
-            <Button>
+            <Button className="w-full sm:w-auto">
                 <Download className="mr-2 h-4 w-4" />
                 Generar PDF
             </Button>
@@ -92,25 +92,30 @@ export default function ReportsPage() {
         <Table>
             <TableHeader>
                 <TableRow>
-                    <TableHead>Folio</TableHead>
+                    <TableHead className="hidden sm:table-cell">Folio</TableHead>
                     <TableHead>Contribuyente</TableHead>
-                    <TableHead>Concepto</TableHead>
+                    <TableHead className="hidden md:table-cell">Concepto</TableHead>
                     <TableHead className="text-right">Total</TableHead>
-                    <TableHead>Fecha Pago</TableHead>
-                    <TableHead>Estado Recibo</TableHead>
+                    <TableHead className="hidden md:table-cell">Fecha Pago</TableHead>
+                    <TableHead>Estado</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {mockPayments.slice(0, 3).map((payment) => {
+                {mockPayments.slice(0, 5).map((payment) => {
                     const contributor = mockContributors.find(c => c.id === payment.contribuyenteId);
                     return (
                     <TableRow key={payment.id}>
-                        <TableCell className="font-medium">{payment.folio}</TableCell>
-                        <TableCell>{contributor?.nombre_completo || 'N/A'}</TableCell>
-                        <TableCell>{payment.concepto}</TableCell>
+                        <TableCell className="hidden sm:table-cell font-medium">{payment.folio}</TableCell>
+                        <TableCell>
+                            <div className="font-medium">{contributor?.nombre_completo || 'N/A'}</div>
+                            <div className="text-sm text-muted-foreground md:hidden">
+                                {payment.fechaPago}
+                            </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">{payment.concepto}</TableCell>
                         <TableCell className="text-right">${payment.total.toFixed(2)}</TableCell>
-                        <TableCell>{payment.fechaPago}</TableCell>
-                        <TableCell><Badge className="bg-green-500 text-white">{payment.estadoRecibo}</Badge></TableCell>
+                        <TableCell className="hidden md:table-cell">{payment.fechaPago}</TableCell>
+                        <TableCell><Badge variant="default">{payment.estadoRecibo}</Badge></TableCell>
                     </TableRow>
                     );
                 })}
