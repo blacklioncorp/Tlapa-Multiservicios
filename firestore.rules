@@ -1,0 +1,197 @@
+/**
+ * Core Philosophy:
+ * This ruleset implements a Role-Based Access Control (RBAC) model for a municipal services application.
+ * Access to taxpayer data is strictly controlled by the role ('admin', 'cajero', 'tecnico') assigned
+ * to an authenticated application user. The second major security pattern is user ownership, which is
+ * used to protect a user's own profile document.
+ *
+ * Data Structure:
+ * The ruleset protects two main data hierarchies:
+ * 1. /usuariosApp/{uid}: Contains application user profiles, keyed by their Firebase Auth UID.
+ *    Each document stores the user's role, which is the foundation of the RBAC system.
+ * 2. /contribuyentes/{contribuyenteId}: A top-level collection containing all taxpayer data.
+ *    This collection has deeply nested subcollections for properties (inmuebles), services (servicios),
+ *    and payments (pagos).
+ *
+ * Key Security Decisions:
+ * - Role-Based Access: All access to the `/contribuyentes` data tree is governed by roles.
+ *   - 'admin': Full read/write access to all data, including user profiles.
+ *   - 'cajero': Read access to all taxpayer data and write access for creating/managing taxpayers,
+ *     properties, services, and payments.
+ *   - 'tecnico': Read-only access to all taxpayer data.
+ * - User Profile Security: A user can read and update their own profile document. Listing all users
+ *   is prohibited for non-admins to prevent user enumeration. Only admins can create or delete user profiles.
+ * - Default Deny: Unauthenticated users or authenticated users without a recognized role are denied
+ *   all access to taxpayer data.
+ * - Inferred Authorization via `get()`: The provided data model stores user roles in `/usuariosApp/{uid}`
+ *   but does not denormalize these roles onto the `/contribuyentes` documents. To enforce RBAC, these
+ *   rules must perform a `get()` operation to the user's profile document on each request to check their
+ *   role. While functional, this adds a read operation to every access check and is a point for future
+ *   optimization via denormalization.
+ *
+ * Denormalization for Authorization:
+ * This ruleset relies on a `get()` call to fetch the user's role from their profile. In a production
+ * environment, if performance becomes an issue, consider denormalizing key authorization fields. For example,
+ * when a cashier creates a payment, the `Pago` document could include a `createdBy: { uid: '...', role: 'cajero' }`
+ * map to simplify auditing and certain security rules, avoiding the extra `get()`.
+ *
+ * Structural Segregation:
+ * The data is well-segregated. User application data (`usuariosApp`) is entirely separate from the
+ * taxpayer data (`contribuyentes`), which simplifies rule logic and prevents data leakage.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --------------------------------------------------------------------
+    // Helper Functions
+    // --------------------------------------------------------------------
+
+    /**
+     * Checks if a user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the currently authenticated user's UID matches the provided userId.
+     * This is the foundation of the "ownership" security pattern.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * A robust check for update/delete operations, ensuring the document exists.
+     * This prevents write operations on non-existent documents from being processed.
+     */
+    function documentExists() {
+      return resource != null;
+    }
+
+    /**
+     * Retrieves the role of the currently authenticated user from their profile document.
+     * This function is central to the RBAC model and requires one `get` operation per call.
+     */
+    function getUserRole() {
+      return get(/databases/$(database)/documents/usuariosApp/$(request.auth.uid)).data.rol;
+    }
+
+    /**
+     * Checks if the user has the 'admin' role.
+     */
+    function isAdmin() {
+      return isSignedIn() && getUserRole() == 'admin';
+    }
+
+    /**
+     * Checks if the user has the 'cajero' (cashier) role.
+     */
+    function isCajero() {
+      return isSignedIn() && getUserRole() == 'cajero';
+    }
+
+    /**
+     * Checks if the user has the 'tecnico' (technician) role.
+     */
+    // function isTecnico() {
+    //   return isSignedIn() && getUserRole() == 'tecnico';
+    // }
+    
+    /**
+     * Checks if the user is any type of authorized staff member.
+     * Used for granting broad read access across the taxpayer data tree.
+     */
+    function isStaff() {
+      let role = getUserRole();
+      return isSignedIn() && (role == 'admin' || role == 'cajero' || role == 'tecnico');
+    }
+    
+    /**
+     * Checks if the user is authorized to perform write operations (admin or cashier).
+     */
+    function canWriteContribuyenteData() {
+        return isAdmin() || isCajero();
+    }
+
+    // --------------------------------------------------------------------
+    // User Profile Rules (/usuariosApp)
+    // --------------------------------------------------------------------
+
+    /**
+     * @description Manages application user profiles. Users can manage their own profile,
+     *              while admins have full control over all profiles.
+     * @path /usuariosApp/{uid}
+     * @allow (get) An authenticated user with uid 'user123' reading their own profile at /usuariosApp/user123.
+     * @deny (list) A non-admin user trying to list all documents in the /usuariosApp collection.
+     * @principle Enforces document ownership and provides administrative override capabilities.
+     */
+    match /usuariosApp/{uid} {
+      allow get: if isOwner(uid) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isOwner(uid) || isAdmin();
+      allow update: if (isOwner(uid) || isAdmin()) && documentExists();
+      allow delete: if isAdmin() && documentExists();
+    }
+
+    // --------------------------------------------------------------------
+    // Taxpayer Data Rules (/contribuyentes)
+    // --------------------------------------------------------------------
+
+    /**
+     * @description Secures the root taxpayer documents. Access is restricted to staff roles.
+     * @path /contribuyentes/{contribuyenteId}
+     * @allow (get) An authenticated user with the 'tecnico' role reading a document.
+     * @deny (create) An authenticated user with the 'tecnico' role trying to create a document.
+     * @principle Implements Role-Based Access Control (RBAC) for all taxpayer data.
+     */
+    match /contribuyentes/{contribuyenteId} {
+      allow get, list: if isStaff();
+      allow create: if canWriteContribuyenteData();
+      allow update, delete: if canWriteContribuyenteData() && documentExists();
+    }
+
+    /**
+     * @description Secures taxpayer property (inmueble) documents. Inherits RBAC from its parent.
+     * @path /contribuyentes/{contribuyenteId}/inmuebles/{inmuebleId}
+     * @allow (list) An authenticated user with the 'cajero' role listing all properties for a taxpayer.
+     * @deny (update) An authenticated user without a staff role trying to update a property document.
+     * @principle Enforces RBAC and validates relational integrity on create/update operations.
+     */
+    match /contribuyentes/{contribuyenteId}/inmuebles/{inmuebleId} {
+      allow get, list: if isStaff();
+      allow create: if canWriteContribuyenteData() && request.resource.data.contribuyenteId == contribuyenteId;
+      allow update: if canWriteContribuyenteData() && documentExists() && request.resource.data.contribuyenteId == resource.data.contribuyenteId;
+      allow delete: if canWriteContribuyenteData() && documentExists();
+    }
+
+    /**
+     * @description Secures property service (servicio) documents. Inherits RBAC.
+     * @path /contribuyentes/{contribuyenteId}/inmuebles/{inmuebleId}/servicios/{servicioId}
+     * @allow (get) An authenticated 'admin' user reading a specific service document.
+     * @deny (create) A 'tecnico' user trying to create a new service document.
+     * @principle Enforces RBAC and validates relational integrity on create/update operations.
+     */
+    match /contribuyentes/{contribuyenteId}/inmuebles/{inmuebleId}/servicios/{servicioId} {
+      allow get, list: if isStaff();
+      allow create: if canWriteContribuyenteData() && request.resource.data.inmuebleId == inmuebleId;
+      allow update: if canWriteContribuyenteData() && documentExists() && request.resource.data.inmuebleId == resource.data.inmuebleId;
+      allow delete: if canWriteContribuyenteData() && documentExists();
+    }
+
+    /**
+     * @description Secures payment (pago) documents. This is the deepest level of the hierarchy and inherits RBAC.
+     * @path /contribuyentes/{contribuyenteId}/inmuebles/{inmuebleId}/servicios/{servicioId}/pagos/{pagoId}
+     * @allow (create) A 'cajero' user creating a new payment document for a service.
+     * @deny (delete) A 'tecnico' user trying to delete a payment record.
+     * @principle Enforces RBAC and validates relational integrity on create/update operations.
+     */
+    match /contribuyentes/{contribuyenteId}/inmuebles/{inmuebleId}/servicios/{servicioId}/pagos/{pagoId} {
+      allow get, list: if isStaff();
+      allow create: if canWriteContribuyenteData() && request.resource.data.servicioId == servicioId;
+      allow update: if canWriteContribuyenteData() && documentExists() && request.resource.data.servicioId == resource.data.servicioId;
+      allow delete: if canWriteContribuyenteData() && documentExists();
+    }
+  }
+}

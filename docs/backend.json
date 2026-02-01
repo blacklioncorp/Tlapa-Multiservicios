@@ -1,0 +1,321 @@
+{
+  "entities": {
+    "Contribuyente": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Contribuyente",
+      "type": "object",
+      "description": "Represents a taxpayer (person/entity) in the system.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Contribuyente entity."
+        },
+        "nombreCompleto": {
+          "type": "string",
+          "description": "The full name of the taxpayer."
+        },
+        "rfc": {
+          "type": "string",
+          "description": "The tax identification number (RFC) of the taxpayer."
+        },
+        "telefono": {
+          "type": "string",
+          "description": "The phone number of the taxpayer."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the taxpayer.",
+          "format": "email"
+        },
+        "fechaRegistro": {
+          "type": "string",
+          "description": "The date when the taxpayer was registered.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "nombreCompleto",
+        "rfc"
+      ]
+    },
+    "Inmueble": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Inmueble",
+      "type": "object",
+      "description": "Represents a property (real estate) owned by a taxpayer.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Inmueble entity."
+        },
+        "contribuyenteId": {
+          "type": "string",
+          "description": "Reference to Contribuyente. (Relationship: Contribuyente 1:N Inmueble)"
+        },
+        "direccionTexto": {
+          "type": "string",
+          "description": "The textual address of the property."
+        },
+        "coordenadas": {
+          "type": "string",
+          "description": "GeoPoint coordinates (latitude and longitude) of the property as a stringified object."
+        },
+        "colonia": {
+          "type": "string",
+          "description": "The neighborhood (colonia) where the property is located."
+        },
+        "municipio": {
+          "type": "string",
+          "description": "The municipality where the property is located."
+        },
+        "estado": {
+          "type": "string",
+          "description": "The state where the property is located."
+        },
+        "referencias": {
+          "type": "string",
+          "description": "Additional references or landmarks for the property."
+        }
+      },
+      "required": [
+        "id",
+        "contribuyenteId",
+        "direccionTexto",
+        "coordenadas"
+      ]
+    },
+    "Servicio": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Servicio",
+      "type": "object",
+      "description": "Represents a service provided to a property (e.g., water, property tax).",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Servicio entity."
+        },
+        "inmuebleId": {
+          "type": "string",
+          "description": "Reference to Inmueble. (Relationship: Inmueble 1:N Servicio)"
+        },
+        "tipo": {
+          "type": "string",
+          "description": "The type of service (e.g., agua, predial, catastro)."
+        },
+        "numeroServicio": {
+          "type": "string",
+          "description": "The service number (e.g., meter number)."
+        },
+        "fechaAlta": {
+          "type": "string",
+          "description": "The date when the service was activated.",
+          "format": "date-time"
+        },
+        "activo": {
+          "type": "boolean",
+          "description": "Indicates whether the service is currently active."
+        }
+      },
+      "required": [
+        "id",
+        "inmuebleId",
+        "tipo",
+        "numeroServicio",
+        "fechaAlta",
+        "activo"
+      ]
+    },
+    "Pago": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Pago",
+      "type": "object",
+      "description": "Represents a payment made for a service.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Pago entity."
+        },
+        "servicioId": {
+          "type": "string",
+          "description": "Reference to Servicio. (Relationship: Servicio 1:N Pago)"
+        },
+        "monto": {
+          "type": "number",
+          "description": "The amount of the payment."
+        },
+        "fechaPago": {
+          "type": "string",
+          "description": "The date when the payment was made.",
+          "format": "date-time"
+        },
+        "periodoCubierto": {
+          "type": "string",
+          "description": "The period covered by the payment (e.g., \"2024-01\")."
+        },
+        "metodo": {
+          "type": "string",
+          "description": "The payment method used."
+        },
+        "comprobanteUrl": {
+          "type": "string",
+          "description": "URL of the payment receipt."
+        }
+      },
+      "required": [
+        "id",
+        "servicioId",
+        "monto",
+        "fechaPago",
+        "periodoCubierto",
+        "metodo"
+      ]
+    },
+    "UsuarioApp": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UsuarioApp",
+      "type": "object",
+      "description": "Represents a user of the application. Note: This should not contain passwords or sensitive authentication data.",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Unique identifier for the UsuarioApp entity, synchronized with Firebase Auth."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the user.",
+          "format": "email"
+        },
+        "rol": {
+          "type": "string",
+          "description": "The role of the user (e.g., admin, tecnico, cajero)."
+        },
+        "nombre": {
+          "type": "string",
+          "description": "The name of the user."
+        }
+      },
+      "required": [
+        "uid",
+        "email",
+        "rol",
+        "nombre"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/usuariosApp/{uid}",
+        "definition": {
+          "entityName": "UsuarioApp",
+          "schema": {
+            "$ref": "#/backend/entities/UsuarioApp"
+          },
+          "description": "Stores user profile data, keyed by the Firebase Auth UID.  This provides direct access to user information.",
+          "params": [
+            {
+              "name": "uid",
+              "description": "The Firebase Auth UID of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/contribuyentes/{contribuyenteId}",
+        "definition": {
+          "entityName": "Contribuyente",
+          "schema": {
+            "$ref": "#/backend/entities/Contribuyente"
+          },
+          "description": "Stores taxpayer information. Each document represents a taxpayer.",
+          "params": [
+            {
+              "name": "contribuyenteId",
+              "description": "The unique identifier of the taxpayer."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/contribuyentes/{contribuyenteId}/inmuebles/{inmuebleId}",
+        "definition": {
+          "entityName": "Inmueble",
+          "schema": {
+            "$ref": "#/backend/entities/Inmueble"
+          },
+          "description": "Stores property information linked to a specific taxpayer.  The contribuyenteId is part of the path to ensure ownership.",
+          "params": [
+            {
+              "name": "contribuyenteId",
+              "description": "The unique identifier of the taxpayer."
+            },
+            {
+              "name": "inmuebleId",
+              "description": "The unique identifier of the property."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/contribuyentes/{contribuyenteId}/inmuebles/{inmuebleId}/servicios/{servicioId}",
+        "definition": {
+          "entityName": "Servicio",
+          "schema": {
+            "$ref": "#/backend/entities/Servicio"
+          },
+          "description": "Stores service information related to a specific property, inheriting ownership from contribuyente and inmueble.",
+          "params": [
+            {
+              "name": "contribuyenteId",
+              "description": "The unique identifier of the taxpayer."
+            },
+            {
+              "name": "inmuebleId",
+              "description": "The unique identifier of the property."
+            },
+            {
+              "name": "servicioId",
+              "description": "The unique identifier of the service."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/contribuyentes/{contribuyenteId}/inmuebles/{inmuebleId}/servicios/{servicioId}/pagos/{pagoId}",
+        "definition": {
+          "entityName": "Pago",
+          "schema": {
+            "$ref": "#/backend/entities/Pago"
+          },
+          "description": "Stores payment information for a specific service, inheriting ownership from contribuyente, inmueble, and servicio.",
+          "params": [
+            {
+              "name": "contribuyenteId",
+              "description": "The unique identifier of the taxpayer."
+            },
+            {
+              "name": "inmuebleId",
+              "description": "The unique identifier of the property."
+            },
+            {
+              "name": "servicioId",
+              "description": "The unique identifier of the service."
+            },
+            {
+              "name": "pagoId",
+              "description": "The unique identifier of the payment."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "This Firestore structure is designed to support the Tlapa Multiservices application, focusing on managing taxpayers, properties, services, and payments. The structure prioritizes security, scalability, and efficient querying, especially for geo-based data and payment status. It incorporates path-based ownership for private user data, and a membership map model for collaborative data. Authorization Independence is achieved through denormalization (copying ownership/authorization attributes to subcollections to avoid costly and insecure `get()` calls in security rules.)\n\n**Key Design Choices and Justifications:**\n\n*   **/usuariosApp/{uid}**: Stores user profile data, keyed by the Firebase Auth UID.  This provides direct access to user information, and the structure `/usuariosApp/{uid}` ensures path-based ownership for user-specific data.\n*   **/contribuyentes/{contribuyenteId}**: Stores taxpayer information. Each document represents a taxpayer. There is no parent-child relationship enforced at this level to simplify listing all taxpayers, but the `contribuyenteId` is used in the `inmuebles` collection to link properties to taxpayers.\n*   **/contribuyentes/{contribuyenteId}/inmuebles/{inmuebleId}**: Stores property information linked to a specific taxpayer. The `contribuyenteId` is part of the path to ensure that each property belongs to a taxpayer.  This enforces a clear ownership structure. The path-based ownership allows simple rules to define that only the taxpayer can create, read, update, or delete their properties.\n*   **/contribuyentes/{contribuyenteId}/inmuebles/{inmuebleId}/servicios/{servicioId}**: Stores service information (water, property tax, etc.) related to a specific property. The `contribuyenteId` and `inmuebleId` are part of the path, creating a nested ownership structure. This ensures that each service belongs to a property and, indirectly, to a taxpayer. Path-based rules secure access.\n*   **/contribuyentes/{contribuyenteId}/inmuebles/{inmuebleId}/servicios/{servicioId}/pagos/{pagoId}**: Stores payment information for a specific service. The `contribuyenteId`, `inmuebleId`, and `servicioId` in the path establish a clear hierarchy of ownership. This ensures each payment is associated with a service, property, and taxpayer. Path based rules again secure access.\n\n**Authorization Independence (Denormalization Strategy):**\n\n*   The nested structure `/contribuyentes/{contribuyenteId}/inmuebles/{inmuebleId}/servicios/{servicioId}/pagos/{pagoId}` inherently provides authorization independence because the full path establishes the context. Security rules can easily check that the authenticated user has access to the `contribuyenteId` without needing to perform additional `get()` operations to verify ownership.\n\n**QAPs (Rules Are Not Filters):**\n\n*   The segregation of data into distinct collections (`contribuyentes`, `inmuebles`, `servicios`, `pagos`) based on entity type and ownership simplifies security rules. Each collection has a clearly defined security posture. List operations are secured via path-based ownership. For example, listing inmuebles requires that the user has access to the `contribuyenteId` in the path.\n\nThis structure supports the app's core features, including geo-referenced user verification, multiservice payment tracking, interactive map interface, automated status overrides, dashboard KPIs, payment management, and custom reporting."
+  }
+}
