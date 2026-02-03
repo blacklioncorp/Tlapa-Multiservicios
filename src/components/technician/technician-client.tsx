@@ -33,12 +33,16 @@ export function TechnicianClient({ initialProperties, contributors }: Technician
             setIsDialogOpen(true);
         }
     };
-    
-    const handleAddProperty = (data: Omit<Property, 'id' | 'status' | 'coordenadas' | 'municipio' | 'estado'>) => {
+
+    const handleAddProperty = (data: Omit<Property, 'id' | 'status' | 'coordenadas' | 'municipio' | 'estado'> & { tipoRegistro: "agua" | "catastro" }) => {
         if (!newPropertyCoords) return;
 
+        // Separamos tipoRegistro ya que no es parte del objeto Property base
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { tipoRegistro, ...propertyData } = data;
+
         const newProperty: Property & { paymentStatus: PaymentStatus } = {
-            ...data,
+            ...propertyData,
             id: `P${properties.length + 1}`,
             coordenadas: newPropertyCoords,
             status: 'pending',
@@ -48,10 +52,10 @@ export function TechnicianClient({ initialProperties, contributors }: Technician
         };
 
         setProperties(prev => [...prev, newProperty]);
-        
+
         toast({
             title: "Inmueble Añadido",
-            description: `El inmueble en "${newProperty.direccionTexto}" ha sido agregado.`,
+            description: `El inmueble (${tipoRegistro.toUpperCase()}) en "${newProperty.direccionTexto}" ha sido agregado exitosamente.`,
         });
 
         // Reset state
@@ -88,8 +92,8 @@ export function TechnicianClient({ initialProperties, contributors }: Technician
                     </Button>
                 </CardHeader>
                 <CardContent>
-                    <ManagementMap 
-                        properties={properties} 
+                    <ManagementMap
+                        properties={properties}
                         onMapClick={isAddMode ? handleMapClick : undefined}
                         newPropertyLocation={newPropertyCoords}
                     />

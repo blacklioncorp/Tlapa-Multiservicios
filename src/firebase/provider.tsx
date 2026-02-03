@@ -69,6 +69,42 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
   // Effect to subscribe to Firebase auth state changes
   useEffect(() => {
+    // Check for mock session first (Development only)
+    const storedMockSession = typeof window !== 'undefined' ? localStorage.getItem('mock_session') : null;
+    if (storedMockSession === 'true') {
+      setUserAuthState({
+        user: {
+          uid: 'admin-mock-id',
+          email: 'admin@tlapa.gob.mx',
+          displayName: 'Admin User',
+          emailVerified: true,
+          isAnonymous: false,
+          metadata: {},
+          providerData: [],
+          refreshToken: '',
+          tenantId: null,
+          delete: async () => { },
+          getIdToken: async () => 'mock-token',
+          getIdTokenResult: async () => ({
+            token: 'mock-token',
+            signInProvider: 'custom',
+            claims: {},
+            authTime: Date.now().toString(),
+            issuedAtTime: Date.now().toString(),
+            expirationTime: (Date.now() + 3600).toString(),
+          }),
+          reload: async () => { },
+          toJSON: () => ({}),
+          phoneNumber: null,
+          photoURL: null,
+          providerId: 'custom',
+        } as unknown as User,
+        isUserLoading: false,
+        userError: null
+      });
+      return;
+    }
+
     if (!auth) { // If no Auth service instance, cannot determine user state
       setUserAuthState({ user: null, isUserLoading: false, userError: new Error("Auth service not provided.") });
       return;
@@ -154,14 +190,14 @@ export const useFirebaseApp = (): FirebaseApp => {
   return firebaseApp;
 };
 
-type MemoFirebase <T> = T & {__memo?: boolean};
+type MemoFirebase<T> = T & { __memo?: boolean };
 
 export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | (MemoFirebase<T>) {
   const memoized = useMemo(factory, deps);
-  
-  if(typeof memoized !== 'object' || memoized === null) return memoized;
+
+  if (typeof memoized !== 'object' || memoized === null) return memoized;
   (memoized as MemoFirebase<T>).__memo = true;
-  
+
   return memoized;
 }
 

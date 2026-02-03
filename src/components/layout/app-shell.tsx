@@ -70,8 +70,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const handleLogout = async () => {
     try {
+      localStorage.removeItem('mock_session');
       await signOut(auth);
-      router.push("/login");
+      // Force reload or redirect to ensure provider state clears if it was relying on storage
+      window.location.href = '/login';
     } catch (error) {
       console.error("Error signing out:", error);
     }
@@ -129,8 +131,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <header className="flex h-14 items-center gap-4 border-b bg-card px-4 sm:px-6">
           <SidebarTrigger className="md:hidden" />
           <div className="flex-1">
-             <h1 className="font-headline text-lg font-semibold">
-                {navItems.find(item => item.href === pathname)?.label || 'Tlapa Multiservicios'}
+            <h1 className="font-headline text-lg font-semibold">
+              {navItems.find(item => item.href === pathname)?.label || 'Tlapa Multiservicios'}
             </h1>
           </div>
           <DropdownMenu>

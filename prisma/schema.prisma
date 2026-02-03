@@ -18,65 +18,92 @@ model AppUser {
   avatarUrl String?
 }
 
-model Contributor {
-  id              String      @id @default(cuid())
+// 1. Tabla de Contribuyentes
+model Contribuyente {
+  id              String   @id @default(uuid())
   nombre_completo String
-  rfc             String      @unique
-  telefono        String
-  email           String      @unique
-  fechaRegistro   DateTime    @default(now())
+  rfc             String?  @unique
+  email           String?
+  telefono        String?
+  fecha_registro  DateTime @default(now())
+
+  cuentas CuentaServicio[]
+  payments Payment[]
+
+  @@map("contribuyentes")
+}
+
+// 2. Tabla de Catálogo de Servicios
+model ServicioCatalogo {
+  id                 String   @id @default(uuid())
+  nombre_servicio    String
+  descripcion        String?
+  costo_base         Decimal  @default(0.00) @db.Decimal(10, 2)
+  tipo_cobro         String   @default("MENSUAL") // MENSUAL, ANUAL, UNICO
+  requiere_direccion Boolean  @default(true)
+
+  cuentas CuentaServicio[]
+
+  @@map("servicios_catalogo")
+}
+
+// 3. Tabla de Cuentas de Servicio (Ubicaciones y Servicios)
+model CuentaServicio {
+  id                 String   @id @default(uuid())
+  contribuyenteId    String
+  servicioId         String?
+  alias_ubicacion    String?
+  direccion_completa String?
+  referencia_interna String?
+  lat                Decimal? @db.Decimal(10, 8)
+  lng                Decimal? @db.Decimal(11, 8)
   
-  properties      Property[]
-  payments        Payment[]
+  // Nuevos campos para contrato y tarifas
+  tipo_contrato      String?  @default("ESTANDAR") // ESTANDAR, COMERCIAL, INDUSTRIAL
+  fecha_contrato     DateTime @default(now())
+  tarifa_personalizada Decimal? @db.Decimal(10, 2) // Si es null, usa el costo_base del servicio
+
+  metadata           Json?    @default("{\"control_interno\": {\"activo\": false, \"monto_adeudo\": 0}}")
+  estatus_pago       String?  @default("al_corriente")
+
+  contribuyente Contribuyente     @relation(fields: [contribuyenteId], references: [id], onDelete: Cascade)
+  servicio      ServicioCatalogo? @relation(fields: [servicioId], references: [id])
+  payments      Payment[]
+
+  @@map("cuentas_servicio")
 }
 
-model Property {
-  id               String       @id @default(cuid())
-  direccionTexto   String
-  lat              Float
-  lng              Float
-  colonia          String
-  municipio        String
-  estado           String
-  referencias      String
-  status           String // 'verified' | 'pending'
-  
-  contribuyente    Contributor  @relation(fields: [contribuyenteId], references: [id])
-  contribuyenteId  String
+// 4. Tabla de Descuentos
+model Descuento {
+  id         String  @id @default(uuid())
+  nombre     String  // Ej: "INAPAM", "Pago Anual Anticipado"
+  porcentaje Float   // Ej: 0.50 para 50%
+  activo     Boolean @default(true)
+  reglas     Json?   // Reglas adicionales (ej. fechas validas, rango de edad)
 
-  services         Service[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("descuentos")
 }
 
-model Service {
-  id              String    @id @default(cuid())
-  tipo            String // 'agua' | 'predial' | 'catastro'
-  numeroServicio  String    @unique
-  fechaAlta       DateTime  @default(now())
-  activo          Boolean   @default(true)
-
-  property        Property  @relation(fields: [inmuebleId], references: [id])
-  inmuebleId      String
-
-  payments        Payment[]
-}
-
-// Modelo de Pagos/Recibos basado en el archivo Excel proporcionado
+// Modelo de Pagos adaptado
 model Payment {
-  id            String    @id @default(cuid()) // Corresponde a UUIUD
-  folio         Int
-  caja          Int
-  fecha         DateTime
-  programa      String
-  clave         String?   // CLAVE de la hoja de cálculo
-  estadoRecibo  String    // "VIGENTE"
-  formaPago     String    // "EFECTIVO"
-  concepto      String
-  total         Float
+  id           String   @id @default(uuid())
+  folio        Int
+  caja         Int
+  fecha        DateTime
+  programa     String
+  clave        String?
+  estadoRecibo String
+  formaPago    String
+  concepto     String
+  total        Float
 
-  // Relaciones con otros modelos
-  service       Service?  @relation(fields: [servicioId], references: [id])
-  servicioId    String?
+  // Relaciones actualizadas
+  cuentaId String?
+  cuenta   CuentaServicio? @relation(fields: [cuentaId], references: [id])
 
-  contributor   Contributor? @relation(fields: [contribuyenteId], references: [id])
   contribuyenteId String?
+  contribuyente   Contribuyente? @relation(fields: [contribuyenteId], references: [id])
 }
